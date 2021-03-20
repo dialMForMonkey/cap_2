@@ -12,8 +12,12 @@ Vagrant.configure("2") do |config|
 
   # Every Vagrant development environment requires a box. You can search for
   # boxes at https://vagrantcloud.com/search.
-  # trocar essa /home
   
+  # validar quantidade de memoria no host
+
+  # WpqF7W3xPDNkz39
+
+
   
   
   config.vm.provider "virtualbox" do |v|
@@ -21,12 +25,24 @@ Vagrant.configure("2") do |config|
     v.cpus = 4
   end
 
+  config.vm.define "git_lab", primary:true do |web|
+    web.vm.hostname = "git-lab"
+    web.vm.box = "ubuntu/xenial64"
+    web.vm.network "private_network", ip: "192.168.1.3", hostname: true
+    web.vm.provision "ansible_local" do |ansible|
+      ansible.playbook = "playbooks-ansible/git-lab.yml"
+      ansible.extra_vars = {
+          node_ip: "192.168.1.3",
+      }
+    end
+  end 
+  
   config.vm.define "k8s_main", primary:true do |web|
     web.vm.hostname = "k8s-web-main"
     web.vm.box = "ubuntu/xenial64"
     web.vm.network "private_network", ip: "192.168.1.2", hostname: true
     web.vm.provision "ansible_local" do |ansible|
-      ansible.playbook = "kubernetes-setup/master-playbook.yml"
+      ansible.playbook = "playbooks-ansible/k8s-master-playbook.yml"
       ansible.extra_vars = {
           node_ip: "192.168.1.2",
       }
@@ -40,7 +56,7 @@ Vagrant.configure("2") do |config|
     api.vm.box = "ubuntu/xenial64"
     api.vm.network "private_network", ip: "192.168.1.#{10+machine_id}", hostname: true
     api.vm.provision "ansible_local" do |ansible|
-      ansible.playbook = "kubernetes-setup/node-playbook.yml"
+      ansible.playbook = "playbooks-ansible/k8s-node-playbook.yml"
       ansible.extra_vars = {
           node_ip: "192.168.1.#{10+machine_id}",
       }

@@ -1,0 +1,46 @@
+- hosts: all
+  become: yes
+  tasks: 
+  - name: Install dependencies for git lab  
+    apt: 
+      name: "{{ packages }}" 
+      update_cache: yes
+    vars:
+      packages:
+      - openssh-server
+      - ca-certificates
+      - curl
+      - tzdata
+      - perl
+  
+  - name: Install dependencies for git lab
+    apt: 
+      name: postfix
+      update_cache: yes
+  
+  - name: Download gitlab
+    get_url: url=https://packages.gitlab.com/install/repositories/gitlab/gitlab-ce/script.deb.sh dest=/tmp/gitlab-script.deb.sh
+  
+  - name: Execute bash gitlab
+    command: /bin/bash /tmp/gitlab-script.deb.sh
+  
+  - name: Remove bash
+    file: path=/tmp/gitlab-script.deb.sh state=absent
+
+
+  - name: Install GitLab
+    package:
+      name: "gitlab-ce"
+      state: present
+  
+  - name: Reconfigure GitLab (first run).
+    command: >
+      gitlab-ctl reconfigure
+      creates=/var/opt/gitlab/bootstrapped
+    failed_when: false    
+    notify: restart gitlab
+
+  handlers:
+  - name: restart gitlab
+    command: gitlab-ctl reconfigure
+    register: gitlab_restart
