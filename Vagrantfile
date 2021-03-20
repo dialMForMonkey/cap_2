@@ -13,50 +13,38 @@ Vagrant.configure("2") do |config|
   # Every Vagrant development environment requires a box. You can search for
   # boxes at https://vagrantcloud.com/search.
   # trocar essa /home
-  path_rsa = File.expand_path("~/.ssh/id_rsa.pub")
-  public_key =   File.read(path_rsa)
   
+  
+  
+  config.vm.provider "virtualbox" do |v|
+    v.memory = 3072
+    v.cpus = 4
+  end
+
   config.vm.define "k8s_main", primary:true do |web|
-    web.vm.hostname = "k8swebmain"
-    web.ssh.insert_key = false
+    web.vm.hostname = "k8s-web-main"
     web.vm.box = "ubuntu/xenial64"
     web.vm.network "private_network", ip: "192.168.1.2", hostname: true
-    web.ssh.forward_agent = true
-    
-    web.vm.provision "file",  source:  path_rsa, destination: "/home/vagrant/.ssh/id_rsa"
-    web.vm.provision :shell, :inline =>"
-    echo 'Copying ansible-vm public SSH Keys to the VM'
-    mkdir -p /home/vagrant/.ssh
-    chmod 700 /home/vagrant/.ssh
-    echo '#{public_key}' >> /home/vagrant/.ssh/authorized_keys
-    chmod -R 600 /home/vagrant/.ssh/authorized_keys
-    echo 'Host 192.168.*.*' >> /home/vagrant/.ssh/config
-    echo 'StrictHostKeyChecking no' >> /home/vagrant/.ssh/config
-    echo 'UserKnownHostsFile /dev/null' >> /home/vagrant/.ssh/config
-    chmod -R 600 /home/vagrant/.ssh/config
-    ", privileged: false
-    web.vm.provision "shell", path: "./install_config_ansible.sh",  privileged: true
+    web.vm.provision "ansible_local" do |ansible|
+      ansible.playbook = "kubernetes-setup/master-playbook.yml"
+      ansible.extra_vars = {
+          node_ip: "192.168.1.2",
+      }
+    end
+
   end
 
 (1..2).each do |machine_id|
   config.vm.define "k8s_node_#{machine_id}" do |api|
-    api.vm.hostname = "k8sapinode#{machine_id}"
-    api.ssh.insert_key = false
+    api.vm.hostname = "k8s-api-node#{machine_id}"
     api.vm.box = "ubuntu/xenial64"
-    api.vm.provision "file", source:   path_rsa, destination: "/home/vagrant/.ssh/id_rsa"
     api.vm.network "private_network", ip: "192.168.1.#{10+machine_id}", hostname: true
-    api.ssh.forward_agent = true
-    api.vm.provision :shell, :inline =>"
-    echo 'Copying ansible-vm public SSH Keys to the VM'
-    mkdir -p /home/vagrant/.ssh
-    chmod 700 /home/vagrant/.ssh
-    echo '#{public_key}' >> /home/vagrant/.ssh/authorized_keys
-    chmod -R 600 /home/vagrant/.ssh/authorized_keys
-    echo 'Host 192.168.*.*' >> /home/vagrant/.ssh/config
-    echo 'StrictHostKeyChecking no' >> /home/vagrant/.ssh/config
-    echo 'UserKnownHostsFile /dev/null' >> /home/vagrant/.ssh/config
-    chmod -R 600 /home/vagrant/.ssh/config
-    ", privileged: false
+    api.vm.provision "ansible_local" do |ansible|
+      ansible.playbook = "kubernetes-setup/node-playbook.yml"
+      ansible.extra_vars = {
+          node_ip: "192.168.1.#{10+machine_id}",
+      }
+    end
   end
 end
 
