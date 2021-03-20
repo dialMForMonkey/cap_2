@@ -29,11 +29,13 @@ Vagrant.configure("2") do |config|
     web.vm.hostname = "git-lab"
     web.vm.box = "ubuntu/xenial64"
     web.vm.network "private_network", ip: "192.168.1.3", hostname: true
-    web.vm.provision "ansible_local" do |ansible|
+    
+    web.vm.provision 'install git-lab', type:"ansible_local"do |ansible|
       ansible.playbook = "playbooks-ansible/git-lab.yml"
-      ansible.extra_vars = {
-          node_ip: "192.168.1.3",
-      }
+    end
+    
+    web.vm.provision 'install git-lab-runner', type:"ansible_local" do |ansible|
+      ansible.playbook = "playbooks-ansible/git-lab-runner.yml"
     end
   end 
   

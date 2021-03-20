@@ -17,3 +17,5 @@
 *.log
 
 kubernetes-setup/join-command
+
+playbooks-ansible/join-command
