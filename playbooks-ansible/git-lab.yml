@@ -12,6 +12,7 @@
       - curl
       - tzdata
       - perl
+      - htop
   
   - name: Install dependencies for git lab
     apt: 
@@ -39,6 +40,9 @@
       creates=/var/opt/gitlab/bootstrapped
     failed_when: false    
     notify: restart gitlab
+  
+  - name: Add hosts
+    shell:  echo "192.168.1.3 	gitlab.example.com" >> temp.txt
 
   handlers:
   - name: restart gitlab

@@ -21,8 +21,8 @@ Vagrant.configure("2") do |config|
   
   
   config.vm.provider "virtualbox" do |v|
-    v.memory = 3072
-    v.cpus = 4
+    v.memory = 6144
+    v.cpus = 6
   end
 
   config.vm.define "git_lab", primary:true do |web|
